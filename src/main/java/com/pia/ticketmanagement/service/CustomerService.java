@@ -3,16 +3,19 @@ package com.pia.ticketmanagement.service;
 import com.pia.ticketmanagement.dto.request.CreateCustomerRequest;
 import com.pia.ticketmanagement.dto.request.UpdateCustomerRequest;
 import com.pia.ticketmanagement.dto.response.CustomerResponse;
+import com.pia.ticketmanagement.dto.response.CustomerStatusHistoryResponse;
 import com.pia.ticketmanagement.exception.BadRequestException;
 import com.pia.ticketmanagement.exception.ConflictException;
 import com.pia.ticketmanagement.exception.NotFoundException;
-import com.pia.ticketmanagement.model.Customer;
-import com.pia.ticketmanagement.model.CustomerStatus;
-import com.pia.ticketmanagement.model.District;
-import com.pia.ticketmanagement.model.Province;
+import com.pia.ticketmanagement.model.*;
 import com.pia.ticketmanagement.repository.CustomerRepository;
+import com.pia.ticketmanagement.repository.CustomerStatusHistoryRepository;
 import com.pia.ticketmanagement.repository.DistrictRepository;
 import com.pia.ticketmanagement.repository.ProvinceRepository;
+import com.pia.ticketmanagement.dto.request.UpdateCustomerStatusRequest;
+import com.pia.ticketmanagement.model.CustomerStatusHistory;
+
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +28,7 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final ProvinceRepository provinceRepository;
     private final DistrictRepository districtRepository;
+    private final CustomerStatusHistoryRepository statusHistoryRepository;
 
     public List<CustomerResponse> getAllCustomers(String search) {
         List<Customer> customers;
@@ -32,10 +36,7 @@ public class CustomerService {
         if (search == null || search.isBlank()) {
             customers = customerRepository.findAll();
         } else {
-            customers = customerRepository
-                    .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrPhoneNumberContaining(
-                            search, search, search
-                    );
+            customers = customerRepository.searchCustomers(search);
         }
 
         return customers.stream()
@@ -141,5 +142,59 @@ public class CustomerService {
                 .district(customer.getDistrict().getName())
                 .status(customer.getStatus())
                 .build();
+    }
+    public CustomerResponse updateCustomerStatus(Long id, UpdateCustomerStatusRequest request) {
+        Customer customer = findCustomerById(id);
+
+        if (request.getStatus() == null) {
+            throw new BadRequestException("Customer status is required.");
+        }
+
+        if (request.getStatus() == CustomerStatus.INACTIVE && request.getInactiveReason() == null) {
+            throw new BadRequestException("Inactive reason is required.");
+        }
+
+        if (request.getStatus() == CustomerStatus.SUSPENDED && request.getSuspendedReason() == null) {
+            throw new BadRequestException("Suspended reason is required.");
+        }
+
+        if (request.getStatus() == CustomerStatus.ACTIVE) {
+            request.setInactiveReason(null);
+            request.setSuspendedReason(null);
+        }
+
+        CustomerStatus oldStatus = customer.getStatus();
+
+        customer.setStatus(request.getStatus());
+
+        CustomerStatusHistory history = CustomerStatusHistory.builder()
+                .customer(customer)
+                .oldStatus(oldStatus)
+                .newStatus(request.getStatus())
+                .inactiveReason(request.getInactiveReason())
+                .suspendedReason(request.getSuspendedReason())
+                .note(request.getNote())
+                .changedAt(LocalDateTime.now())
+                .build();
+
+        statusHistoryRepository.save(history);
+
+        return mapToResponse(customerRepository.save(customer));
+    }
+    public List<CustomerStatusHistoryResponse> getCustomerStatusHistory(Long customerId) {
+        findCustomerById(customerId);
+
+        return statusHistoryRepository.findByCustomerIdOrderByChangedAtDesc(customerId)
+                .stream()
+                .map(history -> CustomerStatusHistoryResponse.builder()
+                        .id(history.getId())
+                        .oldStatus(history.getOldStatus())
+                        .newStatus(history.getNewStatus())
+                        .inactiveReason(history.getInactiveReason())
+                        .suspendedReason(history.getSuspendedReason())
+                        .note(history.getNote())
+                        .changedAt(history.getChangedAt())
+                        .build())
+                .toList();
     }
 }

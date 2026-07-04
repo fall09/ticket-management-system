@@ -2,7 +2,9 @@ package com.pia.ticketmanagement.controller;
 
 import com.pia.ticketmanagement.dto.request.CreateCustomerRequest;
 import com.pia.ticketmanagement.dto.request.UpdateCustomerRequest;
+import com.pia.ticketmanagement.dto.request.UpdateCustomerStatusRequest;
 import com.pia.ticketmanagement.dto.response.CustomerResponse;
+import com.pia.ticketmanagement.dto.response.CustomerStatusHistoryResponse;
 import com.pia.ticketmanagement.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -44,4 +46,16 @@ public class CustomerController {
     public void deleteCustomer(@PathVariable Long id) {
         customerService.deleteCustomer(id);
     }
+    @PatchMapping("/{id}/status")
+    public CustomerResponse updateCustomerStatus(
+            @PathVariable Long id,
+            @RequestBody UpdateCustomerStatusRequest request
+    ) {
+        return customerService.updateCustomerStatus(id, request);
+    }
+    @GetMapping("/{id}/status-history")
+    public List<CustomerStatusHistoryResponse> getCustomerStatusHistory(@PathVariable Long id) {
+        return customerService.getCustomerStatusHistory(id);
+    }
+
 }
