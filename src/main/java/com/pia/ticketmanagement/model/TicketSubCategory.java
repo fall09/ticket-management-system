@@ -19,7 +19,14 @@ public class TicketSubCategory {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(nullable = false)
+    private boolean locationRequired;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private TicketCategory category;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TicketPriority defaultPriority;
 }

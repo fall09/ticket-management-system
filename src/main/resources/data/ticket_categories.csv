@@ -1,0 +1,75 @@
+﻿category,sub_category,location_required,default_priority
+Internet,No Internet Connection,true,HIGH
+Internet,Slow Internet,true,MEDIUM
+Internet,Intermittent Connection,true,HIGH
+Internet,High Ping / Latency,true,MEDIUM
+Internet,Packet Loss,true,HIGH
+Internet,Fiber Line Failure,true,CRITICAL
+Internet,DSL Connection Problem,true,HIGH
+Internet,Modem Authentication Error,false,MEDIUM
+Internet,Wi-Fi Coverage Issue,true,MEDIUM
+Internet,Internet Activation Failure,false,HIGH
+Internet,Other,true,MEDIUM
+Mobile,No Network Coverage,true,HIGH
+Mobile,Weak Signal,true,MEDIUM
+Mobile,Mobile Data Not Working,true,HIGH
+Mobile,Voice Call Failure,true,HIGH
+Mobile,Incoming Call Issue,true,MEDIUM
+Mobile,Outgoing Call Issue,true,HIGH
+Mobile,SMS Delivery Failure,false,LOW
+Mobile,MMS Problem,false,LOW
+Mobile,Roaming Issue,true,MEDIUM
+Mobile,eSIM Activation Problem,false,MEDIUM
+Mobile,Other,true,MEDIUM
+Billing,Incorrect Invoice Amount,false,MEDIUM
+Billing,Unexpected Charge,false,MEDIUM
+Billing,Payment Failed,false,MEDIUM
+Billing,Refund Request,false,LOW
+Billing,Invoice Not Received,false,LOW
+Billing,Automatic Payment Issue,false,MEDIUM
+Billing,Late Payment Fee Objection,false,LOW
+Billing,Installment Billing Issue,false,LOW
+Billing,Other,true,MEDIUM
+Subscription,New Subscription Request,false,LOW
+Subscription,Subscription Cancellation,false,MEDIUM
+Subscription,Plan Upgrade,false,LOW
+Subscription,Plan Downgrade,false,LOW
+Subscription,Tariff Change Request,false,LOW
+Subscription,Number Portability,false,MEDIUM
+Subscription,SIM Activation,false,HIGH
+Subscription,SIM Replacement,false,MEDIUM
+Subscription,Other,true,MEDIUM
+TV,No TV Signal,true,HIGH
+TV,Missing Channels,true,MEDIUM
+TV,Poor Picture Quality,true,MEDIUM
+TV,Decoder Not Working,true,HIGH
+TV,Smart TV Connection Issue,true,MEDIUM
+TV,Subscription Package Issue,false,LOW
+TV,Other,true,MEDIUM
+Device,Modem Not Working,true,HIGH
+Device,Router Configuration,false,MEDIUM
+Device,ONT Device Failure,true,HIGH
+Device,SIM Card Not Detected,false,HIGH
+Device,Device Replacement Request,false,MEDIUM
+Device,Other,true,MEDIUM
+Infrastructure,Infrastructure Availability Inquiry,true,LOW
+Infrastructure,Fiber Infrastructure Request,true,MEDIUM
+Infrastructure,Cable Damage,true,CRITICAL
+Infrastructure,Outdoor Equipment Failure,true,CRITICAL
+Infrastructure,Installation Delay,true,HIGH
+Infrastructure,Other,true,MEDIUM
+Account,Password Reset,false,LOW
+Account,Unable to Login,false,MEDIUM
+Account,Profile Information Update,false,LOW
+Account,Identity Verification Issue,false,MEDIUM
+Account,Other,true,MEDIUM
+Complaint,Employee Complaint,false,MEDIUM
+Complaint,Service Quality Complaint,false,MEDIUM
+Complaint,Repeated Fault Complaint,false,HIGH
+Complaint,Other,true,MEDIUM
+Information,Campaign Information,false,LOW
+Information,Invoice Information,false,LOW
+Information,Tariff Information,false,LOW
+Information,General Information Request,false,LOW
+Information,Other,true,MEDIUM
+Other,Other,true,MEDIUM
