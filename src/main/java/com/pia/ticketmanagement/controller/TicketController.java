@@ -1,5 +1,6 @@
 package com.pia.ticketmanagement.controller;
 
+import com.pia.ticketmanagement.dto.request.CreateTicketRequest;
 import com.pia.ticketmanagement.dto.response.TicketResponse;
 import com.pia.ticketmanagement.service.TicketService;
 import lombok.RequiredArgsConstructor;
@@ -23,5 +24,10 @@ public class TicketController {
     @GetMapping("/{id}")
     public TicketResponse getTicketById(@PathVariable Long id) {
         return ticketService.getTicketById(id);
+    }
+
+    @PostMapping
+    public TicketResponse createTicket(@RequestBody CreateTicketRequest request) {
+        return ticketService.createTicket(request);
     }
 }
