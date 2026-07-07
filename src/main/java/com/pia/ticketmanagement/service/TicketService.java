@@ -41,7 +41,7 @@ public class TicketService {
         return mapToResponse(ticket);
     }
 
-    private TicketResponse mapToResponse(Ticket ticket) {
+    TicketResponse mapToResponse(Ticket ticket) {
         return TicketResponse.builder()
                 .id(ticket.getId())
                 .ticketNumber(ticket.getTicketNumber())

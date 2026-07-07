@@ -17,4 +17,6 @@ public class CustomerResponse {
     private String district;
 
     private CustomerStatus status;
+
+    private Long ticketCount;
 }

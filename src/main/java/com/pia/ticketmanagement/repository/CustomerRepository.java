@@ -1,11 +1,13 @@
 package com.pia.ticketmanagement.repository;
 
 import com.pia.ticketmanagement.model.Customer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.*;
+import java.util.Optional;
 
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
@@ -13,34 +15,66 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     boolean existsByEmail(String email);
 
-    List<Customer> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrPhoneNumberContaining(
-
-            String firstName,
-
-            String lastName,
-
-            String phoneNumber
-
-    );
     Optional<Customer> findByPhoneNumber(String phoneNumber);
 
     Optional<Customer> findByEmail(String email);
-    @Query("""
 
-            SELECT c FROM Customer c
-
-            WHERE LOWER(c.firstName) LIKE LOWER(CONCAT('%', :search, '%'))
-
-               OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :search, '%'))
-
-               OR LOWER(CONCAT(c.firstName, ' ', c.lastName)) LIKE LOWER(CONCAT('%', :search, '%'))
-
-               OR c.phoneNumber LIKE CONCAT('%', :search, '%')
-
-               OR LOWER(c.email) LIKE LOWER(CONCAT('%', :search, '%'))
-
-            """)
-
-    List<Customer> searchCustomers(@Param("search") String search);
-
+    @Query(
+            value = """
+                SELECT c.*
+                FROM customers c
+                LEFT JOIN tickets t ON t.customer_id = c.id
+                WHERE (:status IS NULL OR c.status = CAST(:status AS varchar))
+                AND (:provinceId IS NULL OR c.province_id = :provinceId)
+                AND (:districtId IS NULL OR c.district_id = :districtId)
+                AND (
+                    :search IS NULL OR
+                    c.first_name ILIKE CONCAT('%', CAST(:search AS varchar), '%') OR
+                    c.last_name ILIKE CONCAT('%', CAST(:search AS varchar), '%') OR
+                    CONCAT(c.first_name, ' ', c.last_name) ILIKE CONCAT('%', CAST(:search AS varchar), '%') OR
+                    c.phone_number ILIKE CONCAT('%', CAST(:search AS varchar), '%') OR
+                    c.email ILIKE CONCAT('%', CAST(:search AS varchar), '%')
+                )
+                GROUP BY c.id
+                HAVING (
+                    :hasTicket IS NULL
+                    OR (:hasTicket = true AND COUNT(t.id) > 0)
+                    OR (:hasTicket = false AND COUNT(t.id) = 0)
+                )
+                """,
+            countQuery = """
+                SELECT COUNT(*)
+                FROM (
+                    SELECT c.id
+                    FROM customers c
+                    LEFT JOIN tickets t ON t.customer_id = c.id
+                    WHERE (:status IS NULL OR c.status = CAST(:status AS varchar))
+                    AND (:provinceId IS NULL OR c.province_id = :provinceId)
+                    AND (:districtId IS NULL OR c.district_id = :districtId)
+                    AND (
+                        :search IS NULL OR
+                        c.first_name ILIKE CONCAT('%', CAST(:search AS varchar), '%') OR
+                        c.last_name ILIKE CONCAT('%', CAST(:search AS varchar), '%') OR
+                        CONCAT(c.first_name, ' ', c.last_name) ILIKE CONCAT('%', CAST(:search AS varchar), '%') OR
+                        c.phone_number ILIKE CONCAT('%', CAST(:search AS varchar), '%') OR
+                        c.email ILIKE CONCAT('%', CAST(:search AS varchar), '%')
+                    )
+                    GROUP BY c.id
+                    HAVING (
+                        :hasTicket IS NULL
+                        OR (:hasTicket = true AND COUNT(t.id) > 0)
+                        OR (:hasTicket = false AND COUNT(t.id) = 0)
+                    )
+                ) filtered_customers
+                """,
+            nativeQuery = true
+    )
+    Page<Customer> filterCustomers(
+            @Param("search") String search,
+            @Param("status") String status,
+            @Param("provinceId") Long provinceId,
+            @Param("districtId") Long districtId,
+            @Param("hasTicket") Boolean hasTicket,
+            Pageable pageable
+    );
 }
