@@ -13,4 +13,5 @@ public interface TicketSubCategoryRepository extends JpaRepository<TicketSubCate
 
     long countByCategoryId(Long categoryId);
 
+
 }

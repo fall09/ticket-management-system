@@ -61,4 +61,8 @@ public class Ticket {
     private LocalDateTime updatedAt;
 
     private LocalDateTime resolvedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_employee_id")
+    private Employee assignedEmployee;
 }

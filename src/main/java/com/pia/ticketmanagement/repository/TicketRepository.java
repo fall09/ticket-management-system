@@ -48,4 +48,9 @@ AND (
             @Param("status") TicketStatus status,
             @Param("priority") TicketPriority priority
     );
+
+    long countByAssignedEmployeeId(Long employeeId);
+
+
+
 }
