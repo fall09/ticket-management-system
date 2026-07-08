@@ -54,6 +54,7 @@ public class EmployeeService {
                 .firstName(employee.getFirstName())
                 .lastName(employee.getLastName())
                 .email(employee.getEmail())
+                .createdAt(employee.getCreatedAt())
                 .build();
     }
 

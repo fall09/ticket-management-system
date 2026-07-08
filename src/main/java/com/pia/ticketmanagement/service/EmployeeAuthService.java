@@ -64,6 +64,7 @@ public class EmployeeAuthService {
                 .firstName(employee.getFirstName())
                 .lastName(employee.getLastName())
                 .email(employee.getEmail())
+                .createdAt(employee.getCreatedAt())
                 .build();
     }
 }

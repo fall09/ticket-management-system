@@ -50,6 +50,9 @@ AND (
     );
 
     long countByAssignedEmployeeId(Long employeeId);
+    List<Ticket> findByAssignedEmployeeIsNull();
+
+    List<Ticket> findByAssignedEmployeeId(Long employeeId);
 
 
 
