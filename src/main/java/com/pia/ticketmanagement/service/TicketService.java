@@ -1,6 +1,7 @@
 package com.pia.ticketmanagement.service;
 
 import com.pia.ticketmanagement.dto.request.CreateTicketRequest;
+import com.pia.ticketmanagement.dto.request.UpdateTicketRequest;
 import com.pia.ticketmanagement.dto.response.TicketResponse;
 import com.pia.ticketmanagement.dto.response.TicketStatusHistoryResponse;
 import com.pia.ticketmanagement.exception.BadRequestException;
@@ -169,5 +170,33 @@ public class TicketService {
                         .changedAt(item.getChangedAt())
                         .build())
                 .toList();
+    }
+    public TicketResponse updateTicket(Long id, UpdateTicketRequest request) {
+        Ticket ticket = findTicketById(id);
+
+        TicketStatus oldStatus = ticket.getStatus();
+
+        ticket.setStatus(request.getStatus());
+        ticket.setPriority(request.getPriority());
+        ticket.setDescription(request.getDescription());
+        ticket.setUpdatedAt(LocalDateTime.now());
+
+        if (request.getStatus() == TicketStatus.RESOLVED) {
+            ticket.setResolvedAt(LocalDateTime.now());
+        }
+
+        if (oldStatus != request.getStatus()) {
+            TicketStatusHistory history = TicketStatusHistory.builder()
+                    .ticket(ticket)
+                    .oldStatus(oldStatus)
+                    .newStatus(request.getStatus())
+                    .note(request.getNote())
+                    .changedAt(LocalDateTime.now())
+                    .build();
+
+            ticketStatusHistoryRepository.save(history);
+        }
+
+        return mapToResponse(ticketRepository.save(ticket));
     }
 }

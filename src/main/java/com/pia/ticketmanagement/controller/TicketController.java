@@ -1,6 +1,7 @@
 package com.pia.ticketmanagement.controller;
 
 import com.pia.ticketmanagement.dto.request.CreateTicketRequest;
+import com.pia.ticketmanagement.dto.request.UpdateTicketRequest;
 import com.pia.ticketmanagement.dto.response.TicketResponse;
 import com.pia.ticketmanagement.dto.response.TicketStatusHistoryResponse;
 import com.pia.ticketmanagement.service.TicketService;
@@ -57,4 +58,12 @@ public class TicketController {
     public List<TicketStatusHistoryResponse> getTicketStatusHistory(@PathVariable Long id) {
         return ticketService.getTicketStatusHistory(id);
     }
+    @PutMapping("/{id}")
+    public TicketResponse updateTicket(
+            @PathVariable Long id,
+            @RequestBody UpdateTicketRequest request
+    ) {
+        return ticketService.updateTicket(id, request);
+    }
+
 }
