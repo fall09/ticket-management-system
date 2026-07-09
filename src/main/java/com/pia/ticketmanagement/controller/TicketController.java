@@ -5,9 +5,10 @@ import com.pia.ticketmanagement.dto.request.UpdateTicketRequest;
 import com.pia.ticketmanagement.dto.response.TicketResponse;
 import com.pia.ticketmanagement.dto.response.TicketStatusHistoryResponse;
 import com.pia.ticketmanagement.service.TicketService;
+import com.pia.ticketmanagement.model.Employee;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import com.pia.ticketmanagement.model.Employee;
+import com.pia.ticketmanagement.dto.response.TicketActivityLogResponse;
 import org.springframework.security.core.Authentication;
 import java.util.List;
 
@@ -30,8 +31,12 @@ public class TicketController {
     }
 
     @PostMapping
-    public TicketResponse createTicket(@RequestBody CreateTicketRequest request) {
-        return ticketService.createTicket(request);
+    public TicketResponse createTicket(
+            @RequestBody CreateTicketRequest request,
+            Authentication authentication
+    ) {
+        Employee employee = (Employee) authentication.getPrincipal();
+        return ticketService.createTicket(request, employee);
     }
 
     @GetMapping("/pool")
@@ -55,15 +60,22 @@ public class TicketController {
     }
 
     @GetMapping("/{id}/status-history")
-    public List<TicketStatusHistoryResponse> getTicketStatusHistory(@PathVariable Long id) {
-        return ticketService.getTicketStatusHistory(id);
+    public List<TicketActivityLogResponse> getTicketStatusHistory(@PathVariable Long id) {
+        return ticketService.getTicketActivities(id);
     }
     @PutMapping("/{id}")
     public TicketResponse updateTicket(
             @PathVariable Long id,
-            @RequestBody UpdateTicketRequest request
+            @RequestBody UpdateTicketRequest request,
+            Authentication authentication
     ) {
-        return ticketService.updateTicket(id, request);
+        Employee employee = (Employee) authentication.getPrincipal();
+        return ticketService.updateTicket(id, request, employee);
+    }
+
+    @GetMapping("/{id}/activities")
+    public List<TicketActivityLogResponse> getTicketActivities(@PathVariable Long id) {
+        return ticketService.getTicketActivities(id);
     }
 
 }

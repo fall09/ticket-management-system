@@ -11,4 +11,5 @@ public class UpdateSubCategoryRequest {
     private boolean locationRequired;
 
     private TicketPriority defaultPriority;
+    private boolean availableForNewCustomer;
 }

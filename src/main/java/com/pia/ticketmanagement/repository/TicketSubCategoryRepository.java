@@ -5,6 +5,7 @@ import com.pia.ticketmanagement.model.TicketSubCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TicketSubCategoryRepository extends JpaRepository<TicketSubCategory, Long> {
 
@@ -12,6 +13,8 @@ public interface TicketSubCategoryRepository extends JpaRepository<TicketSubCate
     List<TicketSubCategory> findByCategoryId(Long categoryId);
 
     long countByCategoryId(Long categoryId);
+    Optional<TicketSubCategory> findByNameAndCategory(String name, TicketCategory category);
+    List<TicketSubCategory> findByCategoryIdAndAvailableForNewCustomerTrue(Long categoryId);
 
 
 }

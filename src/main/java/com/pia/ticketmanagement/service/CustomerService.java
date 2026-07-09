@@ -73,7 +73,7 @@ public class CustomerService {
                 .email(request.getEmail())
                 .province(province)
                 .district(district)
-                .status(CustomerStatus.ACTIVE)
+                .status(request.getStatus() != null ? request.getStatus() : CustomerStatus.ACTIVE)
                 .build();
 
         return mapToResponse(customerRepository.save(customer));
@@ -123,8 +123,12 @@ public class CustomerService {
             request.setInactiveReason(null);
             request.setSuspendedReason(null);
         }
-
         CustomerStatus oldStatus = customer.getStatus();
+
+        if (oldStatus == request.getStatus()) {
+            throw new BadRequestException("New status is same as current status.");
+        }
+
         customer.setStatus(request.getStatus());
 
         CustomerStatusHistory history = CustomerStatusHistory.builder()

@@ -1,6 +1,7 @@
 package com.pia.ticketmanagement.dto.request;
 
 
+import com.pia.ticketmanagement.model.TicketPriority;
 import lombok.Data;
 
 @Data
@@ -12,4 +13,7 @@ public class CreateTicketRequest {
     private Long provinceId;
     private Long districtId;
     private String description;
+
+    private TicketPriority priority;
+    private Boolean assignToMe;
 }

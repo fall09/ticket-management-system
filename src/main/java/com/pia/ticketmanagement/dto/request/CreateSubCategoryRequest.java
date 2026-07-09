@@ -8,4 +8,5 @@ public class CreateSubCategoryRequest {
     private String name;
     private boolean locationRequired;
     private TicketPriority defaultPriority;
+    private boolean availableForNewCustomer;
 }

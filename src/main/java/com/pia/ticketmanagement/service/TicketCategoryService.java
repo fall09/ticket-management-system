@@ -10,10 +10,12 @@ import com.pia.ticketmanagement.model.TicketCategory;
 import com.pia.ticketmanagement.model.TicketSubCategory;
 import com.pia.ticketmanagement.repository.TicketCategoryRepository;
 import com.pia.ticketmanagement.repository.TicketSubCategoryRepository;
+import com.pia.ticketmanagement.dto.response.TicketSubCategoryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -50,6 +52,7 @@ public class TicketCategoryService {
                 .name(subCategory.getName())
                 .locationRequired(subCategory.isLocationRequired())
                 .defaultPriority(subCategory.getDefaultPriority())
+                .availableForNewCustomer(subCategory.isAvailableForNewCustomer())
                 .build();
     }
     public CategoryResponse createCategory(CreateCategoryRequest request) {
@@ -74,6 +77,7 @@ public class TicketCategoryService {
                 .name(request.getName())
                 .locationRequired(request.isLocationRequired())
                 .defaultPriority(request.getDefaultPriority())
+                .availableForNewCustomer(request.isAvailableForNewCustomer())
                 .category(category)
                 .build();
 
@@ -88,9 +92,36 @@ public class TicketCategoryService {
         subCategory.setName(request.getName());
         subCategory.setLocationRequired(request.isLocationRequired());
         subCategory.setDefaultPriority(request.getDefaultPriority());
+        subCategory.setAvailableForNewCustomer(request.isAvailableForNewCustomer());
 
         TicketSubCategory saved = subCategoryRepository.save(subCategory);
 
         return mapToSubCategoryResponse(saved);
+    }
+    public List<TicketSubCategoryResponse> getAllSubCategories() {
+        return subCategoryRepository.findAll()
+                .stream()
+                .map(sub -> TicketSubCategoryResponse.builder()
+                        .id(sub.getId())
+                        .name(sub.getName())
+                        .categoryId(sub.getCategory().getId())
+                        .categoryName(sub.getCategory().getName())
+                        .locationRequired(sub.isLocationRequired())
+                        .defaultPriority(sub.getDefaultPriority())
+                        .availableForNewCustomer(sub.isAvailableForNewCustomer())
+                        .build())
+                .toList();
+    }
+
+    public List<SubCategoryResponse> getSubCategoriesForNewCustomerByCategoryId(Long categoryId) {
+        if (!categoryRepository.existsById(categoryId)) {
+            throw new NotFoundException("Category not found.");
+        }
+
+        return subCategoryRepository
+                .findByCategoryIdAndAvailableForNewCustomerTrue(categoryId)
+                .stream()
+                .map(this::mapToSubCategoryResponse)
+                .toList();
     }
 }

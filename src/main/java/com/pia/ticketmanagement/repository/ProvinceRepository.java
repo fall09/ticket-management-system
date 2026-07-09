@@ -8,5 +8,6 @@ import java.util.Optional;
 public interface ProvinceRepository extends JpaRepository<Province, Long> {
 
     Optional<Province> findByName(String name);
+    Optional<Province> findByNameIgnoreCase(String name);
 
 }

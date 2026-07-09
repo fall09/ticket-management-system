@@ -5,6 +5,7 @@ import com.pia.ticketmanagement.dto.request.CreateSubCategoryRequest;
 import com.pia.ticketmanagement.dto.request.UpdateSubCategoryRequest;
 import com.pia.ticketmanagement.dto.response.CategoryResponse;
 import com.pia.ticketmanagement.dto.response.SubCategoryResponse;
+import com.pia.ticketmanagement.dto.response.TicketSubCategoryResponse;
 import com.pia.ticketmanagement.service.TicketCategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +30,10 @@ public class TicketCategoryController {
         return categoryService.getSubCategoriesByCategoryId(id);
     }
 
+    @GetMapping("/sub-categories")
+    public List<TicketSubCategoryResponse> getAllSubCategories() {
+        return categoryService.getAllSubCategories();
+    }
     @PostMapping
     public CategoryResponse createCategory(@RequestBody CreateCategoryRequest request) {
         return categoryService.createCategory(request);
@@ -47,5 +52,13 @@ public class TicketCategoryController {
             @RequestBody UpdateSubCategoryRequest request
     ) {
         return categoryService.updateSubCategory(id, request);
+    }
+
+
+    @GetMapping("/{id}/sub-categories/new-customer")
+    public List<SubCategoryResponse> getSubCategoriesForNewCustomerByCategoryId(
+            @PathVariable Long id
+    ) {
+        return categoryService.getSubCategoriesForNewCustomerByCategoryId(id);
     }
 }

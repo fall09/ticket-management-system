@@ -29,4 +29,6 @@ public class TicketSubCategory {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TicketPriority defaultPriority;
+
+    private boolean availableForNewCustomer;
 }

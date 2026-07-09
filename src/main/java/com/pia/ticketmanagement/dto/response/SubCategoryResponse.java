@@ -12,4 +12,5 @@ public class SubCategoryResponse {
     private String name;
     private Boolean locationRequired;
     private TicketPriority defaultPriority;
+    private boolean availableForNewCustomer;
 }

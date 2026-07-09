@@ -2,6 +2,7 @@ package com.pia.ticketmanagement.service;
 
 import com.pia.ticketmanagement.dto.request.CreateTicketRequest;
 import com.pia.ticketmanagement.dto.request.UpdateTicketRequest;
+import com.pia.ticketmanagement.dto.response.TicketActivityLogResponse;
 import com.pia.ticketmanagement.dto.response.TicketResponse;
 import com.pia.ticketmanagement.dto.response.TicketStatusHistoryResponse;
 import com.pia.ticketmanagement.exception.BadRequestException;
@@ -25,6 +26,7 @@ public class TicketService {
     private final ProvinceRepository provinceRepository;
     private final DistrictRepository districtRepository;
     private final TicketStatusHistoryRepository ticketStatusHistoryRepository;
+    private final TicketActivityLogRepository ticketActivityLogRepository;
 
     public List<TicketResponse> getAllTickets() {
         return ticketRepository.findAll()
@@ -37,7 +39,7 @@ public class TicketService {
         return mapToResponse(findTicketById(id));
     }
 
-    public TicketResponse createTicket(CreateTicketRequest request) {
+    public TicketResponse createTicket(CreateTicketRequest request, Employee employee) {
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new NotFoundException("Customer not found."));
 
@@ -77,14 +79,37 @@ public class TicketService {
                 .subCategory(subCategory)
                 .issueProvince(issueProvince)
                 .issueDistrict(issueDistrict)
+                .assignedEmployee(Boolean.TRUE.equals(request.getAssignToMe()) ? employee : null)
                 .status(TicketStatus.OPEN)
-                .priority(subCategory.getDefaultPriority())
+                .priority(request.getPriority() != null ? request.getPriority() : subCategory.getDefaultPriority())
                 .description(request.getDescription())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        return mapToResponse(ticketRepository.save(ticket));
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        createActivityLog(
+                savedTicket,
+                employee,
+                TicketActivityType.CREATED,
+                null,
+                savedTicket.getTicketNumber(),
+                "Ticket created."
+        );
+
+        if (savedTicket.getAssignedEmployee() != null) {
+            createActivityLog(
+                    savedTicket,
+                    employee,
+                    TicketActivityType.ASSIGNED,
+                    null,
+                    employee.getFirstName() + " " + employee.getLastName(),
+                    "Ticket assigned during creation."
+            );
+        }
+
+        return mapToResponse(savedTicket);
     }
 
     public List<TicketResponse> getTicketPool() {
@@ -111,48 +136,18 @@ public class TicketService {
         ticket.setAssignedEmployee(employee);
         ticket.setUpdatedAt(LocalDateTime.now());
 
-        return mapToResponse(ticketRepository.save(ticket));
-    }
+        Ticket savedTicket = ticketRepository.save(ticket);
 
-    private Ticket findTicketById(Long id) {
-        return ticketRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Ticket not found."));
-    }
+        createActivityLog(
+                savedTicket,
+                employee,
+                TicketActivityType.ASSIGNED,
+                null,
+                employee.getFirstName() + " " + employee.getLastName(),
+                "Ticket taken by employee."
+        );
 
-    public TicketResponse mapToResponse(Ticket ticket) {
-        return TicketResponse.builder()
-                .id(ticket.getId())
-                .ticketNumber(ticket.getTicketNumber())
-                .customerId(ticket.getCustomer().getId())
-                .customerName(ticket.getCustomer().getFirstName() + " " + ticket.getCustomer().getLastName())
-                .customerPhone(ticket.getCustomer().getPhoneNumber())
-                .category(ticket.getCategory().getName())
-                .subCategory(ticket.getSubCategory().getName())
-                .assignedEmployeeId(
-                        ticket.getAssignedEmployee() != null
-                                ? ticket.getAssignedEmployee().getId()
-                                : null
-                )
-                .assignedEmployeeName(
-                        ticket.getAssignedEmployee() != null
-                                ? ticket.getAssignedEmployee().getFirstName() + " " + ticket.getAssignedEmployee().getLastName()
-                                : null
-                )
-                .issueProvince(ticket.getIssueProvince() != null ? ticket.getIssueProvince().getName() : null)
-                .issueDistrict(ticket.getIssueDistrict() != null ? ticket.getIssueDistrict().getName() : null)
-                .status(ticket.getStatus())
-                .priority(ticket.getPriority())
-                .description(ticket.getDescription())
-                .resolutionNote(ticket.getResolutionNote())
-                .createdAt(ticket.getCreatedAt())
-                .updatedAt(ticket.getUpdatedAt())
-                .resolvedAt(ticket.getResolvedAt())
-                .build();
-    }
-
-    private String generateTicketNumber() {
-        long nextNumber = ticketRepository.count() + 1;
-        return String.format("TK-%06d", nextNumber);
+        return mapToResponse(savedTicket);
     }
 
     public List<TicketStatusHistoryResponse> getTicketStatusHistory(Long ticketId) {
@@ -171,10 +166,13 @@ public class TicketService {
                         .build())
                 .toList();
     }
-    public TicketResponse updateTicket(Long id, UpdateTicketRequest request) {
+
+    public TicketResponse updateTicket(Long id, UpdateTicketRequest request, Employee employee) {
         Ticket ticket = findTicketById(id);
 
         TicketStatus oldStatus = ticket.getStatus();
+        TicketPriority oldPriority = ticket.getPriority();
+        String oldDescription = ticket.getDescription();
 
         ticket.setStatus(request.getStatus());
         ticket.setPriority(request.getPriority());
@@ -185,9 +183,15 @@ public class TicketService {
             ticket.setResolvedAt(LocalDateTime.now());
         }
 
+        if (request.getStatus() != TicketStatus.RESOLVED) {
+            ticket.setResolvedAt(null);
+        }
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+
         if (oldStatus != request.getStatus()) {
             TicketStatusHistory history = TicketStatusHistory.builder()
-                    .ticket(ticket)
+                    .ticket(savedTicket)
                     .oldStatus(oldStatus)
                     .newStatus(request.getStatus())
                     .note(request.getNote())
@@ -195,8 +199,117 @@ public class TicketService {
                     .build();
 
             ticketStatusHistoryRepository.save(history);
+
+            createActivityLog(
+                    savedTicket,
+                    employee,
+                    TicketActivityType.STATUS_CHANGED,
+                    oldStatus.name(),
+                    request.getStatus().name(),
+                    request.getNote()
+            );
         }
 
-        return mapToResponse(ticketRepository.save(ticket));
+        if (oldPriority != request.getPriority()) {
+            createActivityLog(
+                    savedTicket,
+                    employee,
+                    TicketActivityType.PRIORITY_CHANGED,
+                    oldPriority.name(),
+                    request.getPriority().name(),
+                    "Priority updated."
+            );
+        }
+
+        if (oldDescription != null && request.getDescription() != null && !oldDescription.equals(request.getDescription())) {
+            createActivityLog(
+                    savedTicket,
+                    employee,
+                    TicketActivityType.DESCRIPTION_UPDATED,
+                    null,
+                    null,
+                    "Description updated."
+            );
+        }
+
+        return mapToResponse(savedTicket);
+    }
+
+    private Ticket findTicketById(Long id) {
+        return ticketRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Ticket not found."));
+    }
+
+    public TicketResponse mapToResponse(Ticket ticket) {
+        return TicketResponse.builder()
+                .id(ticket.getId())
+                .ticketNumber(ticket.getTicketNumber())
+                .customerId(ticket.getCustomer().getId())
+                .customerName(ticket.getCustomer().getFirstName() + " " + ticket.getCustomer().getLastName())
+                .customerPhone(ticket.getCustomer().getPhoneNumber())
+                .category(ticket.getCategory().getName())
+                .subCategory(ticket.getSubCategory().getName())
+                .assignedEmployeeId(ticket.getAssignedEmployee() != null ? ticket.getAssignedEmployee().getId() : null)
+                .assignedEmployeeName(ticket.getAssignedEmployee() != null
+                        ? ticket.getAssignedEmployee().getFirstName() + " " + ticket.getAssignedEmployee().getLastName()
+                        : null)
+                .issueProvince(ticket.getIssueProvince() != null ? ticket.getIssueProvince().getName() : null)
+                .issueDistrict(ticket.getIssueDistrict() != null ? ticket.getIssueDistrict().getName() : null)
+                .status(ticket.getStatus())
+                .priority(ticket.getPriority())
+                .description(ticket.getDescription())
+                .resolutionNote(ticket.getResolutionNote())
+                .createdAt(ticket.getCreatedAt())
+                .updatedAt(ticket.getUpdatedAt())
+                .resolvedAt(ticket.getResolvedAt())
+                .build();
+    }
+
+    private String generateTicketNumber() {
+        long nextNumber = ticketRepository.count() + 1;
+        return String.format("TK-%06d", nextNumber);
+    }
+
+    private void createActivityLog(
+            Ticket ticket,
+            Employee employee,
+            TicketActivityType type,
+            String oldValue,
+            String newValue,
+            String note
+    ) {
+        TicketActivityLog log = TicketActivityLog.builder()
+                .ticket(ticket)
+                .employee(employee)
+                .type(type)
+                .oldValue(oldValue)
+                .newValue(newValue)
+                .note(note)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        ticketActivityLogRepository.save(log);
+    }
+
+    public List<TicketActivityLogResponse> getTicketActivities(Long ticketId) {
+        if (!ticketRepository.existsById(ticketId)) {
+            throw new NotFoundException("Ticket not found.");
+        }
+
+        return ticketActivityLogRepository.findByTicketIdOrderByCreatedAtDesc(ticketId)
+                .stream()
+                .map(log -> TicketActivityLogResponse.builder()
+                        .id(log.getId())
+                        .type(log.getType())
+                        .oldValue(log.getOldValue())
+                        .newValue(log.getNewValue())
+                        .note(log.getNote())
+                        .employeeId(log.getEmployee() != null ? log.getEmployee().getId() : null)
+                        .employeeName(log.getEmployee() != null
+                                ? log.getEmployee().getFirstName() + " " + log.getEmployee().getLastName()
+                                : null)
+                        .createdAt(log.getCreatedAt())
+                        .build())
+                .toList();
     }
 }

@@ -11,4 +11,5 @@ public interface DistrictRepository extends JpaRepository<District, Long> {
     boolean existsByNameAndProvince(String name, Province province);
     Optional<District> findByNameAndProvince(String name, Province province);
     List<District> findByProvince(Province province);
+    Optional<District> findByNameIgnoreCaseAndProvince(String name, Province province);
 }

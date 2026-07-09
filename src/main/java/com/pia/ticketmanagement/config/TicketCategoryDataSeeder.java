@@ -24,10 +24,6 @@ public class TicketCategoryDataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
 
-        if (categoryRepository.count() > 0) {
-            return;
-        }
-
         var inputStream = getClass().getResourceAsStream("/data/ticket_categories.csv");
 
         if (inputStream == null) {
@@ -51,6 +47,12 @@ public class TicketCategoryDataSeeder implements CommandLineRunner {
                 boolean locationRequired = Boolean.parseBoolean(record.get(2).trim());
                 TicketPriority defaultPriority = TicketPriority.valueOf(record.get(3).trim());
 
+                String availableForNewCustomerText = record.isMapped("available_for_new_customer")
+                        ? record.get("available_for_new_customer").trim()
+                        : record.size() > 4 ? record.get(4).trim() : "false";
+
+                final boolean availableForNewCustomer = Boolean.parseBoolean(availableForNewCustomerText);
+
                 TicketCategory category = categoryRepository.findByName(categoryName)
                         .orElseGet(() -> categoryRepository.save(
                                 TicketCategory.builder()
@@ -58,21 +60,26 @@ public class TicketCategoryDataSeeder implements CommandLineRunner {
                                         .build()
                         ));
 
-                boolean exists = subCategoryRepository.existsByNameAndCategory(subCategoryName, category);
+                subCategoryRepository.findByNameAndCategory(subCategoryName, category)
+                        .ifPresentOrElse(existing -> {
+                            existing.setLocationRequired(locationRequired);
+                            existing.setDefaultPriority(defaultPriority);
+                            existing.setAvailableForNewCustomer(availableForNewCustomer);
+                            subCategoryRepository.save(existing);
+                        }, () -> {
+                            TicketSubCategory subCategory = TicketSubCategory.builder()
+                                    .name(subCategoryName)
+                                    .locationRequired(locationRequired)
+                                    .defaultPriority(defaultPriority)
+                                    .availableForNewCustomer(availableForNewCustomer)
+                                    .category(category)
+                                    .build();
 
-                if (!exists) {
-                    TicketSubCategory subCategory = TicketSubCategory.builder()
-                            .name(subCategoryName)
-                            .locationRequired(locationRequired)
-                            .defaultPriority(defaultPriority)
-                            .category(category)
-                            .build();
-
-                    subCategoryRepository.save(subCategory);
-                }
+                            subCategoryRepository.save(subCategory);
+                        });
             }
         }
 
-        System.out.println("Ticket categories seeded successfully.");
+        System.out.println("Ticket categories synchronized successfully.");
     }
 }
