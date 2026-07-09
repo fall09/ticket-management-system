@@ -1,6 +1,7 @@
 package com.pia.ticketmanagement.repository;
 
 import com.pia.ticketmanagement.model.Customer;
+import com.pia.ticketmanagement.model.CustomerStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -77,4 +78,17 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             @Param("hasTicket") Boolean hasTicket,
             Pageable pageable
     );
+
+    @Query("""
+SELECT
+COUNT(c),
+SUM(CASE WHEN c.status = 'ACTIVE' THEN 1 ELSE 0 END),
+SUM(CASE WHEN c.status = 'INACTIVE' THEN 1 ELSE 0 END),
+SUM(CASE WHEN c.status = 'SUSPENDED' THEN 1 ELSE 0 END),
+SUM(CASE WHEN c.status = 'POTENTIAL' THEN 1 ELSE 0 END)
+FROM Customer c
+""")
+    java.util.List<Object[]> getCustomerStatistics();
+
+    long countByStatus(CustomerStatus status);
 }

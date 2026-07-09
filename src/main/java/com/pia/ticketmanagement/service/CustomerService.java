@@ -16,7 +16,9 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -222,4 +224,35 @@ public class CustomerService {
         return districtRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("District not found."));
     }
+    public Map<String, Long> getCustomerStatusCounts() {
+        List<Customer> customers = customerRepository.findAll();
+
+        long totalCustomers = customers.size();
+
+        long activeCustomers = customers.stream()
+                .filter(customer -> customer.getStatus() == CustomerStatus.ACTIVE)
+                .count();
+
+        long inactiveCustomers = customers.stream()
+                .filter(customer -> customer.getStatus() == CustomerStatus.INACTIVE)
+                .count();
+
+        long suspendedCustomers = customers.stream()
+                .filter(customer -> customer.getStatus() == CustomerStatus.SUSPENDED)
+                .count();
+
+        long potentialCustomers = customers.stream()
+                .filter(customer -> customer.getStatus() == CustomerStatus.POTENTIAL)
+                .count();
+
+        Map<String, Long> result = new LinkedHashMap<>();
+        result.put("totalCustomers", totalCustomers);
+        result.put("activeCustomers", activeCustomers);
+        result.put("inactiveCustomers", inactiveCustomers);
+        result.put("suspendedCustomers", suspendedCustomers);
+        result.put("potentialCustomers", potentialCustomers);
+
+        return result;
+    }
+
 }

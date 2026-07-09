@@ -2,9 +2,7 @@ package com.pia.ticketmanagement.service;
 
 import com.pia.ticketmanagement.dto.request.CreateTicketRequest;
 import com.pia.ticketmanagement.dto.request.UpdateTicketRequest;
-import com.pia.ticketmanagement.dto.response.TicketActivityLogResponse;
-import com.pia.ticketmanagement.dto.response.TicketResponse;
-import com.pia.ticketmanagement.dto.response.TicketStatusHistoryResponse;
+import com.pia.ticketmanagement.dto.response.*;
 import com.pia.ticketmanagement.exception.BadRequestException;
 import com.pia.ticketmanagement.exception.NotFoundException;
 import com.pia.ticketmanagement.model.*;
@@ -14,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -312,4 +311,148 @@ public class TicketService {
                         .build())
                 .toList();
     }
+
+    public TicketSummaryResponse getTicketSummary() {
+        long totalTickets = ticketRepository.count();
+
+        long openTickets = ticketRepository.findByStatus(TicketStatus.OPEN).size();
+        long inProgressTickets = ticketRepository.findByStatus(TicketStatus.IN_PROGRESS).size();
+        long onHoldTickets = ticketRepository.findByStatus(TicketStatus.ON_HOLD).size();
+        long resolvedOnlyTickets = ticketRepository.findByStatus(TicketStatus.RESOLVED).size();
+        long closedTickets = ticketRepository.findByStatus(TicketStatus.CLOSED).size();
+        long resolvedTickets = resolvedOnlyTickets + closedTickets;
+
+        long criticalTickets = ticketRepository.findByPriority(TicketPriority.CRITICAL).size();
+
+        int resolutionRate = totalTickets == 0
+                ? 0
+                : (int) ((resolvedTickets * 100) / totalTickets);
+
+        return TicketSummaryResponse.builder()
+                .totalTickets(totalTickets)
+                .openTickets(openTickets)
+                .inProgressTickets(inProgressTickets)
+                .onHoldTickets(onHoldTickets)
+                .resolvedTickets(resolvedTickets)
+                .closedTickets(closedTickets)
+                .criticalTickets(criticalTickets)
+                .resolutionRate(resolutionRate)
+                .build();
+    }
+
+    public TopItemResponse getTopCategory() {
+
+        List<Object[]> result = ticketRepository.getCategoryDistribution();
+
+        result.forEach(row ->
+                System.out.println(row[0] + " -> " + row[1]));
+
+        if (result.isEmpty()) {
+            return TopItemResponse.builder()
+                    .name("None")
+                    .value(0L)
+                    .build();
+        }
+
+        Object[] row = result.get(0);
+
+        return TopItemResponse.builder()
+                .name(String.valueOf(row[0]))
+                .value(((Number) row[1]).longValue())
+                .build();
+    }
+
+    public TopItemResponse getTopProvince() {
+
+        List<Object[]> result = ticketRepository.getProvinceDistribution();
+
+        if (result.isEmpty()) {
+            return TopItemResponse.builder()
+                    .name("None")
+                    .value(0L)
+                    .build();
+        }
+
+        Object[] row = result.get(0);
+
+        return TopItemResponse.builder()
+                .name(String.valueOf(row[0]))
+                .value(((Number) row[1]).longValue())
+                .build();
+    }
+
+    public TopItemResponse getTopPriority() {
+
+        List<Object[]> result = ticketRepository.getPriorityDistribution();
+
+        if (result.isEmpty()) {
+            return TopItemResponse.builder()
+                    .name("None")
+                    .value(0L)
+                    .build();
+        }
+
+        Object[] row = result.get(0);
+
+        return TopItemResponse.builder()
+                .name(String.valueOf(row[0]))
+                .value(((Number) row[1]).longValue())
+                .build();
+    }
+
+    public TopItemResponse getTopSubCategory() {
+
+        List<Object[]> result = ticketRepository.getSubCategoryDistribution();
+
+        if (result.isEmpty()) {
+
+            return TopItemResponse.builder()
+
+                    .name("None")
+
+                    .value(0L)
+
+                    .build();
+
+        }
+
+        Object[] row = result.get(0);
+
+        return TopItemResponse.builder()
+
+                .name(String.valueOf(row[0]))
+
+                .value(((Number) row[1]).longValue())
+
+                .build();
+
+    }
+    public List<Object[]> getCategoryDistribution() {
+
+        return ticketRepository.getCategoryDistribution();
+
+    }
+
+    public List<Object[]> getPriorityDistribution() {
+
+        return ticketRepository.getPriorityDistribution();
+
+    }
+    public List<Object[]> getProvinceDistribution() {
+        return ticketRepository.getProvinceDistribution();
+    }
+
+    public List<Map<String, Object>> getDailyTrend() {
+        return ticketRepository.getDailyTrend()
+                .stream()
+                .map(row -> {
+                    Map<String, Object> item = new java.util.HashMap<>();
+                    item.put("date", String.valueOf(row[0]));
+                    item.put("Created", ((Number) row[1]).longValue());
+                    item.put("Resolved", row[2] == null ? 0L : ((Number) row[2]).longValue());
+                    return item;
+                })
+                .toList();
+    }
+
 }

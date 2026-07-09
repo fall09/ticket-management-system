@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/customers")
@@ -82,5 +83,10 @@ public class CustomerController {
     @GetMapping("/{id}/status-history")
     public List<CustomerStatusHistoryResponse> getCustomerStatusHistory(@PathVariable Long id) {
         return customerService.getCustomerStatusHistory(id);
+    }
+
+    @GetMapping("/status-counts")
+    public Map<String, Long> getCustomerStatusCounts() {
+        return customerService.getCustomerStatusCounts();
     }
 }
