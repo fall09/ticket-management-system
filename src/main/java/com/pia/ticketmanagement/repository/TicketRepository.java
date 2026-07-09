@@ -95,4 +95,13 @@ GROUP BY FUNCTION('DATE', t.createdAt)
 ORDER BY FUNCTION('DATE', t.createdAt)
 """)
     List<Object[]> getDailyTrend();
+
+    @Query("SELECT MAX(t.id) FROM Ticket t")
+    Long findMaxId();
+
+    @Query("""
+SELECT MAX(CAST(SUBSTRING(t.ticketNumber, 4) AS long))
+FROM Ticket t
+""")
+    Long findMaxTicketNumber();
 }

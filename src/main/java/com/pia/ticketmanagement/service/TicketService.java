@@ -265,7 +265,8 @@ public class TicketService {
     }
 
     private String generateTicketNumber() {
-        long nextNumber = ticketRepository.count() + 1;
+        Long maxNumber = ticketRepository.findMaxTicketNumber();
+        long nextNumber = maxNumber == null ? 1 : maxNumber + 1;
         return String.format("TK-%06d", nextNumber);
     }
 
